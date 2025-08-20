@@ -1,5 +1,5 @@
-import jaxgym.components as comp
-import jaxgym.source as sources
+import temgym_core.components as comp
+import temgym_core.source as sources
 from temgym_ui.run import temgym
 
 

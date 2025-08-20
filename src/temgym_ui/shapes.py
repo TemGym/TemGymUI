@@ -1,4 +1,4 @@
-from jaxgym import Radians
+from temgym_core import Radians
 import triangle as tr
 from .utils import P2R, R2P
 import numpy as xp

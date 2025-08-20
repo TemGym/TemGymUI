@@ -4,14 +4,13 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = [
-  "src/jaxgym",
-  "src/microscope_calibration",
+  "src/temgym_ui",
 ]
 only-packages = true
 
 [project]
-name = "jaxgym"
-version = "0.0.0.1.dev0"
+name = "temgym-ui"
+version = "0.0.1"
 authors = [
   { name="David Landers", email="davidlandersresearch@gmail.com" },
   { name="Matthew Bryan", email="matthewbryan52@gmail.com" },
@@ -22,41 +21,29 @@ readme = "README.md"
 keywords=["electron microscopy", "virtual twin", "gui"]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11", 
+    "Programming Language :: Python :: 3.12", 
     "Development Status :: 3 - Alpha",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
 ]
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 dependencies = [
+  'https://github.com/TemGym/TemGymCore/archive/refs/heads/main.zip',
   'jax',
-  'jax_dataclasses',
-  'diffrax',
   'numpy',
   'numba',
   'typing-extensions',
+  'PySide6',
+  'pyqtgraph',
+  'superqt',
+  'pyopengl',
+  'triangle',
 ]
 
 [project.scripts]
-jaxgym = "jaxgym.cli:main_window"
-
-[project.optional-dependencies]
-gui = [
-  'matplotlib',
-  'pyqtgraph',
-  'pyopengl',
-  'triangle',
-  'PySide6',
-  'superqt',
-]
-stemmodel = [
-    "libertem",
-    "libertem-ui",
-]
+temgym = "temgym_ui.cli:main_window"
 
 [project.urls]
-"Homepage" = "https://github.com/TemGym/TemGym"
+"Homepage" = "https://github.com/TemGym/TemGymUI"

@@ -23,12 +23,12 @@ from . import shapes as comp_geom
 from .utils import P2R, R2P, as_gl_lines
 from .widgets import GLImageItem, MyDockLabel
 
-from jaxgym.ray import Ray
-from jaxgym.run import solve_model, run_iter
-from jaxgym.transfer import transfer_rays
+from temgym_core.ray import Ray
+from temgym_core.run import solve_model, run_iter
+from temgym_core.transfer import transfer_rays
 
 if TYPE_CHECKING:
-    from jaxgym import Radians
+    from temgym_core import Radians
 
 
 LABEL_RADIUS = 0.3
