@@ -2,6 +2,10 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.metadata]
+# needed to allow install of unreleased temgym_core from .zip
+allow-direct-references = true
+
 [tool.hatch.build.targets.wheel]
 packages = [
   "src/temgym_ui",
@@ -47,4 +51,5 @@ temgym = "temgym_ui.cli:main_window"
 
 [project.urls]
 "Homepage" = "https://github.com/TemGym/TemGymUI"
+
 
