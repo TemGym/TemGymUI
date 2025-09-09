@@ -9,6 +9,7 @@ import temgym_core.components as comp
 import temgym_core.source as sources
 from temgym_ui.window_3d import TemGymWindow3D, LABEL_RADIUS, Z_ORIENT
 from temgym_ui.window import GridGeomMixin, GridGeomParams
+from matplotlib import colormaps
 
 jax.config.update("jax_platform_name", "cpu")
 
@@ -140,6 +141,8 @@ def show(model, num_rays: int = 64, animate: bool = True):
     timer = QTimer(viewer)
     timer.setInterval(50)
 
+    cmap = colormaps["viridis"].resampled(256)
+
     if animate:
         theta = 0.
 
@@ -147,6 +150,10 @@ def show(model, num_rays: int = 64, animate: bool = True):
             nonlocal theta
             viewer.set_model(make_model(theta), geometry=False, camera=False, tree=False)
             theta += 0.1
+
+            image_2d = np.random.uniform(size=(8, 8))
+            data = (cmap(image_2d.ravel()).reshape(*image_2d.shape, 4) * 255).astype(np.uint8)
+            viewer.detector_image_geom.setData(data)
 
         timer.timeout.connect(iterate)
         timer.start()

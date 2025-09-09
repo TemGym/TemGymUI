@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
 )
 
 import pyqtgraph.opengl as gl
+from .widgets import GLImageItem
 
 import numpy as np
 
@@ -58,7 +59,8 @@ class TemGymWindow3D(QMainWindow):
         self.setCentralWidget(self.tem_window)
 
     def set_model(
-        self, model, tree: bool = True, geometry: bool = True, camera: bool = True, rays: bool = True,
+        self, model, tree: bool = True, geometry: bool = True,
+        camera: bool = True, rays: bool = True,
     ):
         self._model = model
         if geometry:
@@ -84,6 +86,8 @@ class TemGymWindow3D(QMainWindow):
         for wrapper, component in zip(wrappers, model):
             for geometry in reversed(wrapper.geometry(component)):
                 self.tem_window.addItem(geometry)
+                if isinstance(geometry, GLImageItem):
+                    self.detector_image_geom = geometry
         # Add labels next so they appear above geometry
         # for wrapper, component in zip(wrappers, model):
         #     self.tem_window.addItem(wrapper.label(component))
