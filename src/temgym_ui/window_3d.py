@@ -12,10 +12,8 @@ import numpy as np
 
 from .utils import as_gl_lines
 
-from temgym_core.ray import Ray
-from temgym_core.run import solve_model, run_iter
-from temgym_core.transfer import transfer_rays
-from .window import GUIWrapper
+from temgym_core.source import Source
+from temgym_core.run import run_iter
 
 
 LABEL_RADIUS = 0.3
@@ -26,6 +24,12 @@ LENGTHSCALING = 1
 MRAD = 1e-3
 UPDATE_RATE = 100
 BKG_COLOR_3D = (0, 0, 0, 255)
+
+
+class NoGeomGUIWrapper:
+    @staticmethod
+    def geometry(component):
+        return ()
 
 
 class TemGymWindow3D(QMainWindow):
@@ -73,15 +77,15 @@ class TemGymWindow3D(QMainWindow):
             try:
                 wrapper = component.gui()
             except AttributeError:
-                wrapper = GUIWrapper
+                wrapper = NoGeomGUIWrapper
             wrappers.append(wrapper)
         wrappers = list(reversed(wrappers))
         for wrapper, component in zip(wrappers, model):
             for geometry in reversed(wrapper.geometry(component)):
                 self.tem_window.addItem(geometry)
         # Add labels next so they appear above geometry
-        for wrapper, component in zip(wrappers, model):
-            self.tem_window.addItem(wrapper.label(component))
+        # for wrapper, component in zip(wrappers, model):
+        #     self.tem_window.addItem(wrapper.label(component))
         # Add the ray geometry last so it is always on top
         self.tem_window.addItem(self.ray_geometry)
 
@@ -94,16 +98,18 @@ class TemGymWindow3D(QMainWindow):
 
     @Slot()
     def update_rays(self, model, num_rays: int):
-        optical_axis_ray = Ray(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-        transfer_matrices = solve_model(optical_axis_ray, model)
-        transfer_matrices = transfer_matrices[1:]
-        z_vals = np.asarray(
-            tuple(ray.z for _, ray in run_iter(optical_axis_ray, model))
-        )
-        z_vals = z_vals[1:]
-        input_rays = model[0].generate_array(num_rays, random=False)
+        source, *model = model
+        source: Source
 
-        xy_coords = transfer_rays(input_rays, transfer_matrices)
+        input_rays = source.make_rays(num_rays, random=False)
+        xy_coords = [np.stack((input_rays.x, input_rays.y), axis=-1)]
+        z_vals = [input_rays.z]
+        for _, ray in run_iter(input_rays, model):
+            xy_coords.append(np.stack((ray.x, ray.y), axis=-1))
+            z_vals.append(ray.z)
+
+        xy_coords = np.stack(xy_coords, axis=1)
+        z_vals = np.asarray(z_vals)
 
         vertices = as_gl_lines(xy_coords, z_vals, z_mult=Z_ORIENT)
         self.ray_geometry.setData(

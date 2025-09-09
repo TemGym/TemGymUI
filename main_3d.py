@@ -1,15 +1,32 @@
 import sys
 import numpy as np
 import jax
+from ase.build import bulk, surface
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTimer
 import pyqtgraph.opengl as gl
 import temgym_core.components as comp
 import temgym_core.source as sources
-from temgym_ui.window_3d import TemGymWindow3D, LABEL_RADIUS, Z_ORIENT, Ray, solve_model
+from temgym_ui.window_3d import TemGymWindow3D, LABEL_RADIUS, Z_ORIENT
 from temgym_ui.window import GridGeomMixin, GridGeomParams
 
 jax.config.update("jax_platform_name", "cpu")
+
+
+global ATOMS_GEOMETRY
+ATOMS_GEOMETRY = []
+
+
+def make_sphere(x, y, z, radius):
+    md = gl.MeshData.sphere(rows=10, cols=20, radius=radius)
+    colors = np.ones((md.faceCount(), 4), dtype=float)
+    colors[:, 0] = 0.7
+    colors[:, 1] = 0.5
+    colors[:, 2] = 0.2
+    md.setFaceColors(colors)
+    m3 = gl.GLMeshItem(meshdata=md, smooth=False)
+    m3.translate(x, y, z)
+    return m3
 
 
 class DetectorGUIWrapper(GridGeomMixin):
@@ -41,41 +58,77 @@ class DetectorGUIWrapper(GridGeomMixin):
         )
 
 
+class AtomsGUIWrapper:
+    def __init__(self, component: "Atoms"):
+        self.atoms = component
+
+    def geometry(self, component: "Atoms"):
+        return ATOMS_GEOMETRY
+
+
+@comp.jdc.pytree_dataclass
+class Atoms(comp.Component):
+    z: float
+
+    def __call__(self, ray):
+        return ray
+
+    def gui(self):
+        return AtomsGUIWrapper(self)
+
+
 class DetectorWithGUI(comp.Detector, GridGeomMixin):
     def gui(self):
         return DetectorGUIWrapper(self)
 
 
 @comp.jdc.pytree_dataclass
-class MagicDeScanPrecessor:
+class MagicScanPrecessor(comp.Component):
     z: float
     thickness: float
     offset: tuple[float, float]
 
     def __call__(self, ray):
         x, y, dx, dy = ray.x, ray.y, ray.dx, ray.dy
-        shift_x = ray._one * self.offset[0]
-        shift_y = ray._one * self.offset[1]
+        shift_x = self.offset[0]
+        shift_y = self.offset[1]
         return ray.derive(
             x=x - shift_x,
             y=y - shift_y,
             pathlength=ray.pathlength + dx * x + dy * y,
+            z=ray.z + self.thickness,
         )
 
 
-def make_model(theta, radius: float = 0.06):
+@comp.jdc.pytree_dataclass
+class MagicDeScanPrecessor(comp.Component):
+    z: float
+    thickness: float
+    offset: tuple[float, float]
+
+    def __call__(self, ray):
+        x, y, dx, dy = ray.x, ray.y, ray.dx, ray.dy
+        shift_x = self.offset[0]
+        shift_y = self.offset[1]
+        return ray.derive(
+            x=x - shift_x,
+            y=y - shift_y,
+            pathlength=ray.pathlength + dx * x + dy * y,
+            z=ray.z + self.thickness,
+        )
+
+
+def make_model(theta, radius: float = 0.15):
     offset = (radius * np.cos(theta), radius * np.sin(theta))
+    scan_thickness = 0.1
     return (
-        (source := sources.ParallelBeam(0., 0.01, offset_xy=offset)),
-        (input_lens := comp.Lens(0.5, 0.1)),
-        (
-            scanner := DetectorWithGUI(
-                input_lens.z + input_lens.focal_length, (0.001,) * 2, (32, 32)
-            )
-        ),
-        # (output_lens := comp.Lens(scanner.z + input_lens.focal_length, input_lens.focal_length)),
-        (descanner := MagicDeScanPrecessor(scanner.z + input_lens.focal_length, 0.05, offset)),
-        (detector := DetectorWithGUI(descanner.z + 0.5, (0.001,) * 2, (128, 128))),
+        (source := sources.ParallelBeam(0., 0.01)),
+        (scanner := MagicScanPrecessor(source.z + 0.4, scan_thickness, offset)),
+        (input_lens := comp.Lens(scanner.z + scanner.thickness, 0.25)),
+        (atoms := Atoms(input_lens.z + input_lens.focal_length)),
+        (output_lens := comp.Lens(atoms.z + input_lens.focal_length, input_lens.focal_length)),
+        (descanner := MagicDeScanPrecessor(output_lens.z, scan_thickness, offset)),
+        (DetectorWithGUI(descanner.z + 0.5, (0.001,) * 2, (128, 128))),
     )
 
 
@@ -98,14 +151,26 @@ def show(model, num_rays: int = 64, animate: bool = True):
         timer.timeout.connect(iterate)
         timer.start()
 
-    # viewer.show()
-    # AppWindow.exec()
+    viewer.show()
+    AppWindow.exec()
 
 
 if __name__ == "__main__":
     model = make_model(0.)
-    print(model)
-    optical_axis_ray = Ray(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-    transfer_matrices = solve_model(optical_axis_ray, model)
-    # show(model, animate=True)
-    pass
+    atoms_obj = model[3]
+    assert isinstance(atoms_obj, Atoms)
+
+    atoms_obj.z
+    silicon = bulk("Si", crystalstructure="diamond")
+    silicon_111 = surface(
+        silicon, (1, 1, 1), layers=1, periodic=True
+    )
+    atoms = silicon_111 * (5, 7, 1)
+    atoms.center(about=(0., 0., 0.))
+    sf = 50
+    for x, y, z in atoms.get_positions():
+        ATOMS_GEOMETRY.append(
+            make_sphere(x / sf, y / sf, ((z / sf) + atoms_obj.z) * Z_ORIENT, 0.01)
+        )
+
+    show(model, animate=True)
