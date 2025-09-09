@@ -58,14 +58,15 @@ class TemGymWindow3D(QMainWindow):
         self.setCentralWidget(self.tem_window)
 
     def set_model(
-        self, model, tree: bool = True, geometry: bool = True, camera: bool = True
+        self, model, tree: bool = True, geometry: bool = True, camera: bool = True, rays: bool = True,
     ):
         self._model = model
         if geometry:
             self.add_geometry(model)
         if camera:
             self.update_camera(model)
-        self.update_rays(model, self.num_rays)
+        if rays:
+            self.update_rays(model, self.num_rays)
 
     def add_geometry(self, model):
         self.tem_window.clear()

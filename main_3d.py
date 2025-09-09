@@ -145,7 +145,7 @@ def show(model, num_rays: int = 64, animate: bool = True):
 
         def iterate():
             nonlocal theta
-            viewer.set_model(make_model(theta), camera=False, tree=False)
+            viewer.set_model(make_model(theta), geometry=False, camera=False, tree=False)
             theta += 0.1
 
         timer.timeout.connect(iterate)
