@@ -77,7 +77,7 @@ class GridGeomMixin:
 
     def _get_image(self):
         return np.asarray(
-            (((255, 128, 128, 255),),),
+            (((255, 255, 255, 64),),),
             dtype=np.uint8,
         )
 
