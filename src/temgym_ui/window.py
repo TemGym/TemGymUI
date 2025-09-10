@@ -119,7 +119,7 @@ class GridGeomMixin:
         vertices *= XYZ_SCALING
         self.geom_border = gl.GLLinePlotItem(
             pos=np.concatenate((vertices, vertices[:1, :]), axis=0),
-            color=(0.0, 0.0, 0.0, 8.0),
+            color=(1., 1., 1., 0.3),
             antialias=True,
             mode="line_strip",
         )
@@ -128,7 +128,7 @@ class GridGeomMixin:
             grid_verts *= XYZ_SCALING
             self.geom_grid = gl.GLLinePlotItem(
                 pos=grid_verts,
-                color=(0.0, 0.0, 0.0, 0.2),
+                color=(1., 1., 1., 0.1),
                 antialias=True,
                 mode="lines",
             )
@@ -136,7 +136,7 @@ class GridGeomMixin:
             vertices,
             self._get_image(),
         )
-        return [self.geom_image, self.geom_grid, self.geom_border]
+        return [self.geom_border, self.geom_grid, self.geom_image]
 
     def update_geometry(self):
         geom_state = self._get_extents()

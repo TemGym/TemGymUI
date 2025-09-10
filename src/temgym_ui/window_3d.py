@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
 )
 
+from OpenGL import GL
 import pyqtgraph.opengl as gl
 from .widgets import GLImageItem
 
@@ -52,7 +53,7 @@ class TemGymWindow3D(QMainWindow):
 
         # Set some main window's properties
         self.setWindowTitle("TemGym")
-        self.resize(800, 600)
+        self.resize(400, 800)
 
         # Create the display and the buttons
         self.create3DDisplay()
@@ -119,7 +120,7 @@ class TemGymWindow3D(QMainWindow):
         vertices = as_gl_lines(xy_coords, z_vals, z_mult=Z_ORIENT)
         self.ray_geometry.setData(
             pos=vertices * XYZ_SCALING,
-            color=RAY_COLOR + (0.05,),
+            color=RAY_COLOR + (0.33,),
         )
 
     def create3DDisplay(self):
@@ -128,22 +129,33 @@ class TemGymWindow3D(QMainWindow):
         self.tem_window = gl.GLViewWidget()
         self.tem_window.setBackgroundColor(BKG_COLOR_3D)
 
-        # Get the model mean height to centre the camera origin
-        mean_z = 0.0
-        mean_z *= Z_ORIENT
-
-        xyoffset = (0.2 * mean_z, -0.2 * mean_z)
         # Define Camera Parameters
         initial_camera_params = {
-            "center": QVector3D(*xyoffset, mean_z),
-            "fov": 35,
-            "azimuth": 45.0,
-            "distance": 3.5 * abs(mean_z),
+            # "center": QVector3D(0., 5., 0.),
+            "fov": 25,
+            "azimuth": 25.0,
+            "distance": 3.5,
             "elevation": 25.0,
         }
         self.tem_window.setCameraParams(**initial_camera_params)
 
-        self.ray_geometry = gl.GLLinePlotItem(mode="lines", width=2)
+        self.ray_geometry = gl.GLLinePlotItem(
+            mode="lines",
+            antialias=True,
+            width=2
+        )
+        # self.ray_geometry.setDepthValue(-1)
+        self.ray_geometry.setGLOptions({
+            GL.GL_DEPTH_TEST: True,
+            GL.GL_BLEND: True,
+            GL.GL_CULL_FACE: False,
+            'glBlendFuncSeparate': (
+                GL.GL_SRC_ALPHA,
+                GL.GL_ONE_MINUS_SRC_ALPHA,
+                GL.GL_ONE,
+                GL.GL_ONE_MINUS_SRC_ALPHA,
+            ),
+        })
 
         # Add the window to the dock
         return self.tem_window
