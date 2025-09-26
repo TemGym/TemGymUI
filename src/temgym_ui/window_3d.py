@@ -53,7 +53,7 @@ class TemGymWindow3D(QMainWindow):
 
         # Set some main window's properties
         self.setWindowTitle("TemGym")
-        self.resize(400, 800)
+        self.resize(500, 1000)
 
         # Create the display and the buttons
         self.create3DDisplay()
